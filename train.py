@@ -8,12 +8,13 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from scipy.spatial.transform import Rotation as R
 import time
 import pickle
-import argparse 
+import argparse
 from utils import *
 
 from deepVCP import DeepVCP
 from ModelNet40Dataset import ModelNet40Dataset
 from KITTIDataset import KITTIDataset
+from CustomDataset import CustomDataset
 from deepVCP_loss import deepVCP_loss
 
 import matplotlib
@@ -22,7 +23,7 @@ from matplotlib import pyplot as plt
 
 # setup args
 parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--dataset', default="modelnet", help='dataset (specify modelnet or kitti)')
+parser.add_argument('-d', '--dataset', default="custom", help='dataset (specify modelnet or kitti)')
 parser.add_argument('-f', '--full_dataset', default="full", help='specify to train on full or partial dataset')
 parser.add_argument('-r', '--retrain_path', action = "store", type = str, help='specify a saved model to retrain on')
 parser.add_argument('-m', '--model_path', default="final_model.pt", action = "store", type = str, help='specify path to save final model')
@@ -57,6 +58,10 @@ def main():
         root = '/data/dataset/'
         train_data= KITTIDataset(root=root, N=10000, augment=True, split="train")
         test_data = KITTIDataset(root=root, N=10000, augment=True, split="test")
+    else:
+        root = './'
+        train_data= CustomDataset(root=root, N=10000, augment=True, split="train")
+        test_data = CustomDataset(root=root, N=10000, augment=True, split="test")
 
 
     train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=False)
@@ -96,7 +101,7 @@ def main():
         print(f"epoch #{epoch}")
         loss_epoch = []
         running_loss = 0.0
-        
+
         for n_batch, (src, target, R_gt, t_gt, ) in enumerate(train_loader):
             start_time = time.time()
             # mini batch
@@ -115,7 +120,7 @@ def main():
             r_gt = R.from_matrix(R_gt.squeeze(0).cpu().detach().numpy())
             r_gt_arr = torch.tensor(r_gt.as_euler('xyz', degrees=True)).reshape(1, 3)
             pdist = nn.PairwiseDistance(p = 2)
-            
+
             print("rotation error: ", pdist(r_pred_arr, r_gt_arr).item())
             print("translation error: ", pdist(t_pred, t_gt).item())
 
@@ -131,17 +136,17 @@ def main():
                 print("Epoch: [{}/{}], Batch: {}, Loss: {}".format(
                     epoch, num_epochs, n_batch, loss.item()))
                 running_loss = 0.0
-        
+
         torch.save(model.state_dict(), "epoch_" + str(epoch) + "_model.pt")
         loss_epoch_avg += [sum(loss_epoch) / len(loss_epoch)]
         with open("training_loss_" + str(epoch) + ".txt", "wb") as fp:   #Pickling
             pickle.dump(loss_epoch, fp)
-        
+
 
     # save 
     print("Finished Training")
     torch.save(model.state_dict(), model_path)
-    
+
     # begin test 
     model.eval()
     loss_test = []
@@ -159,7 +164,7 @@ def main():
             r_gt = R.from_matrix(R_gt.squeeze(0).cpu().detach().numpy())
             r_gt_arr = torch.tensor(r_gt.as_euler('xyz', degrees=True)).reshape(1, 3)
             pdist = nn.PairwiseDistance(p = 2)
-            
+
             print("rotation error test: ", pdist(r_pred_arr, r_gt_arr).item())
             print("translation error test: ", pdist(t_pred, t_gt).item())
 
