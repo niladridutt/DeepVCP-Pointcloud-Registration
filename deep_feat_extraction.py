@@ -10,9 +10,9 @@ class feat_extraction_layer(nn.Module):
         self.sa1 = PointNetSetAbstraction(npoint = 10000, radius = 0.1, nsample = 256, in_channel = in_channel, mlp = [16, 16, 32], group_all = False)
         self.sa2 = PointNetSetAbstraction(npoint=10000, radius=0.2, nsample=128, in_channel = in_channel, mlp=[32, 64],
                                           group_all=False)
-        self.sa3 = PointNetSetAbstraction(npoint=10000, radius=0.4, nsample=64, in_channel=in_channel, mlp=[64, 64],
+        self.sa3 = PointNetSetAbstraction(npoint=10000, radius=0.4, nsample=64, in_channel=in_channel, mlp=[64, 32],
                                           group_all=False)
-        self.fc = nn.Linear(64, 32)
+        #self.fc = nn.Linear(64, 32)
         # self.sa2 = PointNetSetAbstraction(npoint = 10000, radius = 0.1, nsample = 8, in_channel = in_channel, mlp = [16, 16, 32], group_all = False)
 
     def forward(self, pts):

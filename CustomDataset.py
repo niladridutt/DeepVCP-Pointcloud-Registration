@@ -34,13 +34,9 @@ class CustomDataset(Dataset):
             if not file.endswith('.obj'):
                 continue
             print(f"Processing {file}")
-            src = trimesh.load(os.path.join(path, file))
-            if len(src.vertices) > N:
-                src_points = src.sample(N)
-            else:
-                src_points = src.vertices
+            src_pts = trimesh.load(os.path.join(path, file))
             self.files.append(file)
-            self.points.append(src_points)
+            self.points.append(src_pts)
 
         print('# Total clouds', len(self.points))
 
@@ -48,8 +44,8 @@ class CustomDataset(Dataset):
         return len(self.points)
 
     def __getitem__(self, index):
-        # source pointcloud 
-        src_points = self.points[index].T
+        # source pointcloud
+        src_points = self.points[index].sample(self.N).T
         # 3 x N
         # print("Loading file: ", self.files[index])
 
